@@ -2,6 +2,7 @@
 /*
  * A V4L2 driver for Sony IMX477 cameras.
  * Copyright (C) 2020, Raspberry Pi (Trading) Ltd
+ * Copyright (C) 2026 UAB Kurokesu
  *
  * Based on Sony imx219 camera driver
  * Copyright (C) 2019-2020 Raspberry Pi (Trading) Ltd
@@ -62,6 +63,10 @@ MODULE_PARM_DESC(fstrobe_delay, "Set fstrobe delay from end all lines starting t
 
 #define IMX477_REG_CSI_DT_FMT_H		CCI_REG8(0x0112)
 #define IMX477_REG_CSI_DT_FMT_L		CCI_REG8(0x0113)
+
+#define IMX477_REG_CSI_LANE_MODE	CCI_REG8(0x0114)
+#define IMX477_CSI_2_LANE_MODE		0x01
+#define IMX477_CSI_4_LANE_MODE		0x03
 
 #define IMX477_XCLK_FREQ		24000000
 
@@ -495,7 +500,6 @@ static const struct cci_reg_sequence mode_common_regs[] = {
 	{CCI_REG8(0xb21f), 0x04},
 	{CCI_REG8(0xb35c), 0x00},
 	{CCI_REG8(0xb35e), 0x08},
-	{CCI_REG8(0x0114), 0x01},
 	{CCI_REG8(0x0350), 0x00},
 	{CCI_REG8(0xbcf1), 0x02},
 	{CCI_REG8(0x3ff9), 0x01},
@@ -784,7 +788,6 @@ static const struct cci_reg_sequence mode_1332x990_regs[] = {
 	{CCI_REG8(0x9a4b), 0x06},
 	{CCI_REG8(0x9a4c), 0x06},
 	{CCI_REG8(0x9a4d), 0x06},
-	{CCI_REG8(0x0114), 0x01},
 	{CCI_REG8(0x0340), 0x04},
 	{CCI_REG8(0x0341), 0x1a},
 	{CCI_REG8(0x0344), 0x00},
@@ -1044,6 +1047,7 @@ struct imx477 {
 
 	u64 link_freq_value;
 	u16 iop_pll_mpy;
+	u8 num_lanes;
 
 	/* Current mode */
 	const struct imx477_mode *mode;
@@ -1429,8 +1433,9 @@ static void imx477_set_framing_limits(struct imx477 *imx477)
 
 	bpp = imx477_get_bpp(imx477->fmt_code);
 
-	line_length_min = mode->width * bpp * (u64)IMX477_PIXEL_RATE;
-	do_div(line_length_min, imx477->link_freq_value * 2 * 2 /*LANES*/);
+	line_length_min = div64_u64(mode->width * bpp * (u64)IMX477_PIXEL_RATE,
+				    imx477->link_freq_value * 2 *
+				    imx477->num_lanes);
 	/* Allow 500pixel clocks for HS<>LP transitions (approx 0.6usecs) */
 	line_length_min += 500;
 
@@ -1570,17 +1575,21 @@ static int imx477_start_streaming(struct imx477 *imx477)
 		cci_multi_reg_write(imx477->regmap, extra_regs->regs,
 				    extra_regs->num_of_regs, &ret);
 
+		cci_write(imx477->regmap, IMX477_REG_CSI_LANE_MODE,
+			  imx477->num_lanes == 2 ? IMX477_CSI_2_LANE_MODE :
+						   IMX477_CSI_4_LANE_MODE, &ret);
+
 		/* Update the link frequency PLL multiplier register */
 		cci_write(imx477->regmap, IMX477_REG_IOP_MPY,
 			  imx477->iop_pll_mpy, &ret);
 
 		/*
-		 * Bit rate = link freq * 2 for DDR * 2 for num lanes.
+		 * Bit rate = link freq * 2 for DDR * num lanes.
 		 * 16p16 fixed point in the register. Ignore fractional part.
 		 */
 		cci_write(imx477->regmap, IMX477_REG_REQ_LINK_BIT_RATE,
-			  (((unsigned long)imx477->link_freq_value / 1000000) * 2 * 2) << 16,
-			  &ret);
+			  (((unsigned long)imx477->link_freq_value / 1000000) * 2 *
+			   imx477->num_lanes) << 16, &ret);
 		/*
 		 * DPHY timings are those specified for 450MHz. Switch to auto
 		 * if using some other link frequency
@@ -2047,10 +2056,13 @@ static int imx477_check_hwcfg(struct device *dev, struct imx477 *imx477)
 	}
 
 	/* Check the number of MIPI CSI2 data lanes */
-	if (ep_cfg.bus.mipi_csi2.num_data_lanes != 2) {
-		dev_err(dev, "only 2 data lanes are currently supported\n");
+	if (ep_cfg.bus.mipi_csi2.num_data_lanes != 2 &&
+	    ep_cfg.bus.mipi_csi2.num_data_lanes != 4) {
+		dev_err(dev, "invalid number of data lanes %u\n",
+			ep_cfg.bus.mipi_csi2.num_data_lanes);
 		goto error_out;
 	}
+	imx477->num_lanes = ep_cfg.bus.mipi_csi2.num_data_lanes;
 
 	/* Check the link frequency set in device tree */
 	if (!ep_cfg.nr_of_link_frequencies) {
