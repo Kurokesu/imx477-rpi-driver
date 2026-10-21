@@ -192,6 +192,9 @@ struct imx477_mode {
 	/* Default frame_length value to use in this mode */
 	unsigned int frm_length_default;
 
+	/* Minimum line_length value, set by readout timing in reg_list */
+	unsigned int line_length_min;
+
 	/* Default register values */
 	struct imx477_reg_list reg_list;
 };
@@ -874,6 +877,7 @@ static const struct imx477_mode supported_modes[] = {
 			.height = 3040,
 		},
 		.frm_length_default = 3500,
+		.line_length_min = 6224,
 		.reg_list = {
 			.num_of_regs = ARRAY_SIZE(mode_4056x3040_regs),
 			.regs = mode_4056x3040_regs,
@@ -890,6 +894,7 @@ static const struct imx477_mode supported_modes[] = {
 			.height = 2160,
 		},
 		.frm_length_default = 10,
+		.line_length_min = 6224,
 		.reg_list = {
 			.num_of_regs = ARRAY_SIZE(mode_4056x2160_regs),
 			.regs = mode_4056x2160_regs,
@@ -906,6 +911,7 @@ static const struct imx477_mode supported_modes[] = {
 			.height = 3040,
 		},
 		.frm_length_default = 2197,
+		.line_length_min = 5042,
 		.reg_list = {
 			.num_of_regs = ARRAY_SIZE(mode_2028x1520_regs),
 			.regs = mode_2028x1520_regs,
@@ -922,6 +928,7 @@ static const struct imx477_mode supported_modes[] = {
 			.height = 2160,
 		},
 		.frm_length_default = 2197,
+		.line_length_min = 5042,
 		.reg_list = {
 			.num_of_regs = ARRAY_SIZE(mode_2028x1080_regs),
 			.regs = mode_2028x1080_regs,
@@ -946,6 +953,7 @@ static const struct imx477_mode supported_modes[] = {
 			.height = 1980,
 		},
 		.frm_length_default = 1050,
+		.line_length_min = 2976,
 		.reg_list = {
 			.num_of_regs = ARRAY_SIZE(mode_1332x990_regs),
 			.regs = mode_1332x990_regs,
@@ -1448,6 +1456,8 @@ static void imx477_set_framing_limits(struct imx477 *imx477)
 	 */
 	if (bpp == 12)
 		line_length_min = max(line_length_min, 1332 + 4600);
+
+	line_length_min = max(line_length_min, mode->line_length_min);
 
 	hblank_min = line_length_min - mode->width;
 	__v4l2_ctrl_modify_range(imx477->hblank, hblank_min,
