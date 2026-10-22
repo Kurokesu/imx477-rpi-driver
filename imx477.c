@@ -113,10 +113,11 @@ MODULE_PARM_DESC(fstrobe_delay, "Set fstrobe delay from end all lines starting t
 
 #define IMX477_REG_IOP_PXCK_DIV		CCI_REG8(0x0309)
 #define IMX477_REG_IOP_SYSCK_DIV	CCI_REG8(0x030b)
-  #define IMX477_IOP_SYSCK_DIV		0x02
 #define IMX477_REG_IOP_PREDIV		CCI_REG8(0x030d)
   #define IMX477_IOP_PREDIV		0x02
 #define IMX477_REG_IOP_MPY		CCI_REG16(0x030e)
+#define IMX477_IOPCK_MIN		1200000000ULL
+#define IMX477_IOPCK_MAX		2100000000ULL
 
 /* Test Pattern Control */
 #define IMX477_REG_TEST_PATTERN		CCI_REG16(0x0600)
@@ -523,7 +524,6 @@ static const struct cci_reg_sequence mode_common_regs[] = {
 	{CCI_REG8(0x9e9f), 0x00},
 	{CCI_REG8(0x0301), 0x05},
 	{CCI_REG8(0x0303), 0x02},
-	{IMX477_REG_IOP_SYSCK_DIV, IMX477_IOP_SYSCK_DIV},
 	{IMX477_REG_IOP_PREDIV, IMX477_IOP_PREDIV},
 	{CCI_REG8(0x0310), 0x01},
 	{CCI_REG8(0x080a), 0x00},
@@ -1055,6 +1055,7 @@ struct imx477 {
 
 	u64 link_freq_value;
 	u16 iop_pll_mpy;
+	u8 iop_sysck_div;
 	u8 num_lanes;
 
 	/* Current mode */
@@ -1589,7 +1590,9 @@ static int imx477_start_streaming(struct imx477 *imx477)
 			  imx477->num_lanes == 2 ? IMX477_CSI_2_LANE_MODE :
 						   IMX477_CSI_4_LANE_MODE, &ret);
 
-		/* Update the link frequency PLL multiplier register */
+		/* Update the link frequency PLL registers */
+		cci_write(imx477->regmap, IMX477_REG_IOP_SYSCK_DIV,
+			  imx477->iop_sysck_div, &ret);
 		cci_write(imx477->regmap, IMX477_REG_IOP_MPY,
 			  imx477->iop_pll_mpy, &ret);
 
@@ -2026,23 +2029,33 @@ static void imx477_free_controls(struct imx477 *imx477)
 	mutex_destroy(&imx477->mutex);
 }
 
-static int imx477_check_link_freq(u64 link_frequency, u16 *mpy_out)
+/*
+ * IOPCK = link frequency * 2 (DDR) * IOP_SYCK_DIV. Pick the divider that
+ * keeps the PLL output within its 1200 to 2100 MHz range.
+ */
+static int imx477_check_link_freq(u64 link_frequency, u16 *mpy_out,
+				  u8 *sysck_div_out)
 {
-	u64 mpy = link_frequency * 2 * IMX477_IOP_SYSCK_DIV * IMX477_IOP_PREDIV;
-	u64 tmp;
+	u8 sysck_div;
 
-	do_div(mpy, IMX477_XCLK_FREQ);
+	for (sysck_div = 1; sysck_div <= 4; sysck_div *= 2) {
+		u64 iopck = link_frequency * 2 * sysck_div;
+		u64 mpy;
 
-	tmp = mpy * (IMX477_XCLK_FREQ / IMX477_IOP_PREDIV);
-	do_div(tmp, IMX477_IOP_SYSCK_DIV * 2);
+		if (iopck < IMX477_IOPCK_MIN || iopck > IMX477_IOPCK_MAX)
+			continue;
 
-	if (tmp != link_frequency)
-		return -EINVAL;
+		mpy = iopck * IMX477_IOP_PREDIV;
+		do_div(mpy, IMX477_XCLK_FREQ);
+		if (mpy * (IMX477_XCLK_FREQ / IMX477_IOP_PREDIV) != iopck)
+			continue;
 
-	if (mpy_out)
 		*mpy_out = mpy;
+		*sysck_div_out = sysck_div;
+		return 0;
+	}
 
-	return 0;
+	return -EINVAL;
 }
 
 static int imx477_check_hwcfg(struct device *dev, struct imx477 *imx477)
@@ -2082,7 +2095,8 @@ static int imx477_check_hwcfg(struct device *dev, struct imx477 *imx477)
 
 	for (i = 0; i < ep_cfg.nr_of_link_frequencies; i++) {
 		if (!imx477_check_link_freq(ep_cfg.link_frequencies[i],
-					    &imx477->iop_pll_mpy)) {
+					    &imx477->iop_pll_mpy,
+					    &imx477->iop_sysck_div)) {
 			imx477->link_freq_value = ep_cfg.link_frequencies[i];
 			break;
 		}
