@@ -84,6 +84,10 @@ MODULE_PARM_DESC(fstrobe_delay, "Set fstrobe delay from end all lines starting t
 #define IMX477_REG_LINE_LENGTH		CCI_REG16(0x0342)
 #define IMX477_LINE_LENGTH_MAX		0xfff0
 
+/* Minimum line length is set by ADC conversion time */
+#define IMX477_LINE_LENGTH_MIN_10BIT	2976
+#define IMX477_LINE_LENGTH_MIN_12BIT	5932
+
 /* Long exposure multiplier */
 #define IMX477_LONG_EXP_SHIFT_MAX	7
 #define IMX477_LONG_EXP_SHIFT_REG	CCI_REG8(0x3100)
@@ -192,9 +196,6 @@ struct imx477_mode {
 
 	/* Default frame_length value to use in this mode */
 	unsigned int frm_length_default;
-
-	/* Minimum line_length value, set by readout timing in reg_list */
-	unsigned int line_length_min;
 
 	/* Default register values */
 	struct imx477_reg_list reg_list;
@@ -877,7 +878,6 @@ static const struct imx477_mode supported_modes[] = {
 			.height = 3040,
 		},
 		.frm_length_default = 3500,
-		.line_length_min = 6224,
 		.reg_list = {
 			.num_of_regs = ARRAY_SIZE(mode_4056x3040_regs),
 			.regs = mode_4056x3040_regs,
@@ -894,7 +894,6 @@ static const struct imx477_mode supported_modes[] = {
 			.height = 2160,
 		},
 		.frm_length_default = 10,
-		.line_length_min = 6224,
 		.reg_list = {
 			.num_of_regs = ARRAY_SIZE(mode_4056x2160_regs),
 			.regs = mode_4056x2160_regs,
@@ -911,7 +910,6 @@ static const struct imx477_mode supported_modes[] = {
 			.height = 3040,
 		},
 		.frm_length_default = 2197,
-		.line_length_min = 5042,
 		.reg_list = {
 			.num_of_regs = ARRAY_SIZE(mode_2028x1520_regs),
 			.regs = mode_2028x1520_regs,
@@ -928,7 +926,6 @@ static const struct imx477_mode supported_modes[] = {
 			.height = 2160,
 		},
 		.frm_length_default = 2197,
-		.line_length_min = 5042,
 		.reg_list = {
 			.num_of_regs = ARRAY_SIZE(mode_2028x1080_regs),
 			.regs = mode_2028x1080_regs,
@@ -953,7 +950,6 @@ static const struct imx477_mode supported_modes[] = {
 			.height = 1980,
 		},
 		.frm_length_default = 1050,
-		.line_length_min = 2976,
 		.reg_list = {
 			.num_of_regs = ARRAY_SIZE(mode_1332x990_regs),
 			.regs = mode_1332x990_regs,
@@ -1445,20 +1441,12 @@ static void imx477_set_framing_limits(struct imx477 *imx477)
 	line_length_min = div64_u64(mode->width * bpp * (u64)IMX477_PIXEL_RATE,
 				    imx477->link_freq_value * 2 *
 				    imx477->num_lanes);
+	line_length_min = max_t(u64, line_length_min, mode->width);
 	/* Allow 500pixel clocks for HS<>LP transitions (approx 0.6usecs) */
 	line_length_min += 500;
-
-	/*
-	 * 1332x990 12bit mode appears to need additional horizontal blanking
-	 * compared to all other modes. Empirically determined setting with
-	 * link freq of 750MHz where it still gives valid images. The limit
-	 * leaves all other modes unchanged as their line times are inherently
-	 * greater.
-	 */
-	if (bpp == 12)
-		line_length_min = max(line_length_min, 1332 + 4600);
-
-	line_length_min = max(line_length_min, mode->line_length_min);
+	line_length_min = max_t(u64, line_length_min, bpp == 12 ?
+				IMX477_LINE_LENGTH_MIN_12BIT :
+				IMX477_LINE_LENGTH_MIN_10BIT);
 
 	hblank_min = line_length_min - mode->width;
 	__v4l2_ctrl_modify_range(imx477->hblank, hblank_min,
