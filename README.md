@@ -331,6 +331,53 @@ sudo find /usr/local -depth \( -name '*libcamera*' -o -name '*rpicam*' -o -name 
 
 Cleanup complete. Continue with [install steps](#install).
 
+## FAQ
+
+### Does Raspberry Pi HQ Camera support 4 lanes?
+
+No. HQ Camera board wires out 2 lanes. It works with this driver at 2 lanes, where higher [link frequency](#link-frequency) raises framerates. 4 lanes need an IMX477 module wired for 4 lanes on a 4-lane camera port, see [4lane](#4lane).
+
+### How do I fix "only 2 data lanes are currently supported"?
+
+In-kernel `imx477` driver rejects 4-lane configuration at probe:
+
+```
+imx477 10-001a: only 2 data lanes are currently supported
+imx477 10-001a: probe with driver imx477 failed with error -22
+```
+
+Install this driver and add `4lane` to overlay line:
+
+```ini
+dtoverlay=kurokesu-imx477,4lane
+```
+
+If log also shows `subdevice requires 4 data lanes when 2 are supported`, camera port itself has only 2 lanes. Use 2 lanes there or move camera to a 4-lane port.
+
+### How do I record 1080p at 120 fps with HQ Camera?
+
+Set link frequency to 750 MHz:
+
+```ini
+dtoverlay=kurokesu-imx477,link-frequency=750000000
+```
+
+Record 10 seconds to MJPEG:
+
+```bash
+rpicam-vid -n -t 10000 --mode 2028:1080:10:P --width 2028 --height 1080 --framerate 120 --codec mjpeg -o video.mjpeg
+```
+
+### Why does rpicam-hello say "No cameras available!"?
+
+Check [Install](#install) steps first: `camera_auto_detect=0`, overlay line under `[all]` and `cam0` option matching the port in use. Then check kernel log:
+
+```bash
+dmesg | grep imx477
+```
+
+`failed to read chip id 477` means sensor does not answer on I2C. Check camera port and cable seating, with Pi powered off.
+
 ## Special thanks
 
 - [Raspberry Pi](https://www.raspberrypi.com/) for original [imx477 driver](https://github.com/raspberrypi/linux/blob/rpi-6.18.y/drivers/media/i2c/imx477.c)
