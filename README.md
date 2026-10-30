@@ -9,13 +9,13 @@
 
 Extended Raspberry Pi kernel driver for Sony IMX477, a 12.3 MP 1/2.3" stacked CMOS sensor with 1.55 µm pixels. Drop-in replacement for in-kernel `imx477` driver, works with Raspberry Pi HQ Camera and other IMX477 modules.
 
-Adds:
+Additions over in-kernel driver:
 
-- 4-lane MIPI CSI-2 (up to 1500 Mbps/lane)
+- 4-lane MIPI CSI-2
 - Refined PLL settings across full 150 to 1050 MHz link frequency range
 - Refined line length limits
 
-Framerates (4 lanes at 750 MHz):
+Supported framerates (4 lanes at 750 MHz):
 
 - 4056×3040 @ 30 fps (full resolution)
 - 4056×2160 @ 42 fps (4K crop)
@@ -117,7 +117,7 @@ Available cameras
                       4056x3040 [30.34 fps - (0, 0)/4056x3040 crop]
 ```
 
-*Output shown for `4lane` at 750 MHz.*
+*Output shown for `4lane` at 750 MHz on Pi 5.*
 
 Start live preview:
 
@@ -200,62 +200,34 @@ Other values fail probe with `No supported link frequency configured` in kernel 
 dtoverlay=kurokesu-imx477,4lane,link-frequency=750000000
 ```
 
-Highest usable link frequency on Pi 5 is 750 MHz (1500 Mbps/lane), limited by its CSI-2 receiver.
+Highest usable link frequency on Pi 5 is 750 MHz (1500 Mbps/lane), limited by its CSI-2 receiver. Pi 4 accepts full range, but its ISP caps output at ~25 fps @ full resolution.
 
 #### Output formats
 
-| Link frequency | Data rate / lane | Lanes | Bit depth | Width | Height | Max FPS |
-|---|---|---|---|---|---|---|
-| **Full resolution** | | | | | | |
-| 450 MHz | 900 Mbps | 2 | 8 | 4056 | 3040 | 17 fps |
-| 450 MHz | 900 Mbps | 2 | 10 | 4056 | 3040 | 14 fps |
-| 450 MHz | 900 Mbps | 2 | 12 | 4056 | 3040 | 11 fps |
-| 750 MHz | 1500 Mbps | 2 | 8 | 4056 | 3040 | 28 fps |
-| 750 MHz | 1500 Mbps | 2 | 10 | 4056 | 3040 | 22 fps |
-| 750 MHz | 1500 Mbps | 2 | 12 | 4056 | 3040 | 19 fps |
-| 750 MHz | 1500 Mbps | 4 | 8 | 4056 | 3040 | 30 fps |
-| 750 MHz | 1500 Mbps | 4 | 10 | 4056 | 3040 | 30 fps |
-| 750 MHz | 1500 Mbps | 4 | 12 | 4056 | 3040 | 30 fps |
-| **4K crop (16:9)** | | | | | | |
-| 450 MHz | 900 Mbps | 2 | 8 | 4056 | 2160 | 24 fps |
-| 450 MHz | 900 Mbps | 2 | 10 | 4056 | 2160 | 19 fps |
-| 450 MHz | 900 Mbps | 2 | 12 | 4056 | 2160 | 16 fps |
-| 750 MHz | 1500 Mbps | 2 | 8 | 4056 | 2160 | 39 fps |
-| 750 MHz | 1500 Mbps | 2 | 10 | 4056 | 2160 | 32 fps |
-| 750 MHz | 1500 Mbps | 2 | 12 | 4056 | 2160 | 26 fps |
-| 750 MHz | 1500 Mbps | 4 | 8 | 4056 | 2160 | 42 fps |
-| 750 MHz | 1500 Mbps | 4 | 10 | 4056 | 2160 | 42 fps |
-| 750 MHz | 1500 Mbps | 4 | 12 | 4056 | 2160 | 42 fps |
-| **2028×1520 (2×2 binning)** | | | | | | |
-| 450 MHz | 900 Mbps | 2 | 8 | 2028 | 1520 | 66 fps |
-| 450 MHz | 900 Mbps | 2 | 10 | 2028 | 1520 | 53 fps |
-| 450 MHz | 900 Mbps | 2 | 12 | 2028 | 1520 | 45 fps |
-| 750 MHz | 1500 Mbps | 2 | 8 | 2028 | 1520 | 106 fps |
-| 750 MHz | 1500 Mbps | 2 | 10 | 2028 | 1520 | 86 fps |
-| 750 MHz | 1500 Mbps | 2 | 12 | 2028 | 1520 | 73 fps |
-| 750 MHz | 1500 Mbps | 4 | 8 | 2028 | 1520 | 119 fps |
-| 750 MHz | 1500 Mbps | 4 | 10 | 2028 | 1520 | 119 fps |
-| 750 MHz | 1500 Mbps | 4 | 12 | 2028 | 1520 | 90 fps |
-| **1080p (2×2 binning crop)** | | | | | | |
-| 450 MHz | 900 Mbps | 2 | 8 | 2028 | 1080 | 92 fps |
-| 450 MHz | 900 Mbps | 2 | 10 | 2028 | 1080 | 74 fps |
-| 450 MHz | 900 Mbps | 2 | 12 | 2028 | 1080 | 62 fps |
-| 750 MHz | 1500 Mbps | 2 | 8 | 2028 | 1080 | 147 fps |
-| 750 MHz | 1500 Mbps | 2 | 10 | 2028 | 1080 | 120 fps |
-| 750 MHz | 1500 Mbps | 2 | 12 | 2028 | 1080 | 101 fps |
-| 750 MHz | 1500 Mbps | 4 | 8 | 2028 | 1080 | 166 fps |
-| 750 MHz | 1500 Mbps | 4 | 10 | 2028 | 1080 | 166 fps |
-| 750 MHz | 1500 Mbps | 4 | 12 | 2028 | 1080 | 125 fps |
-| **1332×990 (2×2 binning crop)** | | | | | | |
-| 450 MHz | 900 Mbps | 2 | 8 | 1332 | 990 | 147 fps |
-| 450 MHz | 900 Mbps | 2 | 10 | 1332 | 990 | 120 fps |
-| 450 MHz | 900 Mbps | 2 | 12 | 1332 | 990 | 101 fps |
-| 750 MHz | 1500 Mbps | 2 | 8 | 1332 | 990 | 232 fps |
-| 750 MHz | 1500 Mbps | 2 | 10 | 1332 | 990 | 191 fps |
-| 750 MHz | 1500 Mbps | 2 | 12 | 1332 | 990 | 136 fps |
-| 750 MHz | 1500 Mbps | 4 | 8 | 1332 | 990 | 271 fps |
-| 750 MHz | 1500 Mbps | 4 | 10 | 1332 | 990 | 271 fps |
-| 750 MHz | 1500 Mbps | 4 | 12 | 1332 | 990 | 136 fps |
+| Link frequency | Lanes | 8-bit | 10-bit | 12-bit |
+|---|---|---|---|---|
+| **4056×3040 (full resolution)** | | | | |
+| 450 MHz | 2 | 17 fps | 14 fps | 11 fps |
+| 750 MHz | 2 | 28 fps | 22 fps | 19 fps |
+| 750 MHz | 4 | 30 fps | 30 fps | 30 fps |
+| **4056×2160 (4K crop)** | | | | |
+| 450 MHz | 2 | 24 fps | 19 fps | 16 fps |
+| 750 MHz | 2 | 39 fps | 32 fps | 26 fps |
+| 750 MHz | 4 | 42 fps | 42 fps | 42 fps |
+| **2028×1520 (2×2 binning)** | | | | |
+| 450 MHz | 2 | 66 fps | 53 fps | 45 fps |
+| 750 MHz | 2 | 106 fps | 86 fps | 73 fps |
+| 750 MHz | 4 | 119 fps | 119 fps | 90 fps |
+| **2028×1080 (1080p, 2×2 binning crop)** | | | | |
+| 450 MHz | 2 | 92 fps | 74 fps | 62 fps |
+| 750 MHz | 2 | 147 fps | 120 fps | 101 fps |
+| 750 MHz | 4 | 166 fps | 166 fps | 125 fps |
+| **1332×990 (2×2 binning crop)** | | | | |
+| 450 MHz | 2 | 147 fps | 120 fps | 101 fps |
+| 750 MHz | 2 | 232 fps | 191 fps | 136 fps |
+| 750 MHz | 4 | 271 fps | 271 fps | 136 fps |
+
+*Measured on Pi 5.*
 
 > [!NOTE]
 > RPi5/RP1 has a 380 Mpix/s processing limit. Effective framerate is capped at ~30.3 fps @ full resolution regardless of the link frequency configured here.
