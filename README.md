@@ -111,6 +111,8 @@ Available cameras
                       4056x3040 [30.34 fps - (0, 0)/4056x3040 crop]
 ```
 
+*Output shown for `4lane` at 750 MHz.*
+
 Start live preview:
 
 ```bash
