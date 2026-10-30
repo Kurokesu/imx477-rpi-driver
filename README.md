@@ -260,11 +260,13 @@ Highest usable link frequency on Pi 5 is 750 MHz (1500 Mbps/lane), limited by it
 > [!NOTE]
 > RPi5/RP1 has a 380 Mpix/s processing limit. Effective framerate is capped at ~30.3 fps @ full resolution regardless of the link frequency configured here.
 
-> [!TIP]
-> Options can be combined. Example (cam0, 4-lane):
-> ```ini
-> dtoverlay=kurokesu-imx477,cam0,4lane
-> ```
+### always-on
+
+`always-on` keeps camera regulator permanently enabled, preventing kernel from powering off sensor during runtime PM suspend. Useful for debugging hardware issues, since it forces `CAM_GPIO` high constantly.
+
+```ini
+dtoverlay=kurokesu-imx477,always-on
+```
 
 ### Frame sync
 
@@ -298,13 +300,12 @@ echo 1 | sudo tee /sys/module/imx477/parameters/trigger_mode
 > [!NOTE]
 > Module parameter is global: in a multi-camera setup it applies to all IMX477 sensors. To configure each sensor independently, use device tree overlay options instead. Device tree setting takes precedence over module parameter.
 
-### always-on
-
-`always-on` keeps camera regulator permanently enabled, preventing kernel from powering off sensor during runtime PM suspend.
-
-```ini
-dtoverlay=kurokesu-imx477,always-on
-```
+> [!TIP]
+> Options can be combined. Example (cam0, 4-lane, 750 MHz link):
+>
+> ```ini
+> dtoverlay=kurokesu-imx477,cam0,4lane,link-frequency=750000000
+> ```
 
 ## Build from source
 
