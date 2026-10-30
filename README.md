@@ -1,4 +1,4 @@
-# IMX477 kernel driver for Raspberry Pi
+# IMX477 (HQ Camera) kernel driver for Raspberry Pi
 
 [![Build](https://github.com/Kurokesu/imx477-rpi-driver/actions/workflows/build.yml/badge.svg)](https://github.com/Kurokesu/imx477-rpi-driver/actions/workflows/build.yml)
 [![Code style](https://github.com/Kurokesu/imx477-rpi-driver/actions/workflows/code-style.yml/badge.svg)](https://github.com/Kurokesu/imx477-rpi-driver/actions/workflows/code-style.yml)
@@ -242,7 +242,7 @@ dtoverlay=kurokesu-imx477,always-on
 
 ### Frame sync
 
-Multiple IMX477 sensors can share frame timing through `XVS` pin. One sensor runs as `sync-source` and drives `XVS`, others run as `sync-sink` and follow it:
+Multiple IMX477 cameras can run in hardware sync, sharing frame timing through `XVS` pin. One sensor runs as `sync-source` and drives `XVS`, others run as `sync-sink` and follow it:
 
 ```ini
 dtoverlay=kurokesu-imx477,sync-source
