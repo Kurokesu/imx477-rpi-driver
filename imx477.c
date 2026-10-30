@@ -1394,7 +1394,7 @@ static int imx477_get_pad_format(struct v4l2_subdev *sd,
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 		struct v4l2_mbus_framefmt *try_fmt =
 			v4l2_subdev_state_get_format(sd_state,
-						   fmt->pad);
+						     fmt->pad);
 		/* update the code which could change due to vflip or hflip: */
 		try_fmt->code = fmt->pad == IMAGE_PAD ?
 				imx477_get_format_code(imx477, try_fmt->code) :
@@ -1480,7 +1480,7 @@ static int imx477_set_pad_format(struct v4l2_subdev *sd,
 		imx477_update_image_pad_format(imx477, mode, fmt);
 		if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 			framefmt = v4l2_subdev_state_get_format(sd_state,
-							      fmt->pad);
+								fmt->pad);
 			*framefmt = fmt->format;
 		} else if (imx477->mode != mode ||
 			   imx477->fmt_code != fmt->format.code) {
@@ -1491,7 +1491,7 @@ static int imx477_set_pad_format(struct v4l2_subdev *sd,
 	} else {
 		if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 			framefmt = v4l2_subdev_state_get_format(sd_state,
-							      fmt->pad);
+								fmt->pad);
 			*framefmt = fmt->format;
 		} else {
 			/* Only one embedded data mode is supported */
