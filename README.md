@@ -333,4 +333,4 @@ Cleanup complete. Continue with [install steps](#install).
 
 ## Special thanks
 
-- [Raspberry Pi](https://www.raspberrypi.com/) for original [`imx477` driver](https://github.com/raspberrypi/linux/blob/rpi-6.18.y/drivers/media/i2c/imx477.c)
+- [Raspberry Pi](https://www.raspberrypi.com/) for original [imx477 driver](https://github.com/raspberrypi/linux/blob/rpi-6.18.y/drivers/media/i2c/imx477.c)
