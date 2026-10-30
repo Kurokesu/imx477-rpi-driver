@@ -194,7 +194,7 @@ Default link frequency is 450 MHz (900 Mbps/lane). Driver supports higher link f
 | 300 to 525 MHz | 3 MHz |
 | 600 to 1050 MHz | 6 MHz |
 
-Other values fail probe with `No supported link frequency configured` in kernel log. Example:
+Example:
 
 ```ini
 dtoverlay=kurokesu-imx477,4lane,link-frequency=750000000
