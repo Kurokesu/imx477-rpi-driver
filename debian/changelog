@@ -1,0 +1,10 @@
+imx477-rpi-dkms (1.0.0-1) unstable; urgency=medium
+
+  * Initial release as a DKMS source package.
+  * Drop-in replacement for in-kernel imx477 driver, adding 4-lane MIPI
+    CSI-2, refined PLL settings across 150 to 1050 MHz link frequency
+    and refined line length limits.
+  * Separate kurokesu-imx477 overlay with 4lane and link-frequency
+    options.
+
+ -- Danius Kalvaitis <danius@kurokesu.com>  Fri, 30 Oct 2026 16:38:02 +0200
