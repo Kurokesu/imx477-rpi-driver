@@ -7,15 +7,21 @@
 [![RPi OS Bookworm | Trixie](https://img.shields.io/badge/RPi_OS-Bookworm_%7C_Trixie-blue?logo=raspberrypi)](https://www.raspberrypi.com/software/operating-systems/)
 [![Kernel 6.12+](https://img.shields.io/badge/kernel-6.12%2B-blue?logo=raspberrypi)](https://github.com/raspberrypi/linux/tree/rpi-6.12.y)
 
-Raspberry Pi kernel driver for Sony IMX477, a 12.3 MP 1/2.3" stacked CMOS sensor with 1.55 µm pixels. Extends Raspberry Pi in-kernel `imx477` driver with 4-lane MIPI CSI-2 for higher frame rates.
+Extended Raspberry Pi kernel driver for Sony IMX477, a 12.3 MP 1/2.3" stacked CMOS sensor with 1.55 µm pixels. Drop-in replacement for in-kernel `imx477` driver, works with Raspberry Pi HQ Camera and other IMX477 modules.
 
-- 2-lane and 4-lane MIPI CSI-2
-- 8-bit, 10-bit and 12-bit RAW output
+Adds:
+
+- 4-lane MIPI CSI-2 (up to 1500 Mbps/lane)
+- Refined PLL settings across full 150 to 1050 MHz link frequency range
+- Refined line length limits
+
+Framerates (4 lanes at 750 MHz):
+
 - 4056×3040 @ 30 fps (full resolution)
+- 4056×2160 @ 42 fps (4K crop)
 - 2028×1520 @ 119 fps (2×2 binning)
+- 2028×1080 @ 166 fps (1080p, 2×2 binning crop)
 - 1332×990 @ 271 fps (2×2 binning crop)
-- Frame sync source and sink
-- Drop-in replacement for in-kernel driver
 
 ![Kurokesu camera modules connected to a Raspberry Pi 5.](https://raw.githubusercontent.com/Kurokesu/imx477-rpi-driver/main/docs/kurokesu-on-pi.jpg)
 
@@ -127,15 +133,21 @@ rpicam-still -o test.jpg
 
 ## In-kernel driver
 
-Raspberry Pi kernel ships its own `imx477` module. DKMS installs this driver under `updates/`, which takes precedence. Check which one loads:
+DKMS installs this driver under `updates/`, which takes precedence over in-kernel `imx477` module. Check which one loads:
 
 ```bash
-modinfo -F version imx477
+modinfo -n imx477
 ```
 
-This driver prints its package version. In-kernel driver prints nothing. Removing this driver brings in-kernel one back.
+Expected output:
 
-Stock `dtoverlay=imx477` works with this driver as well, limited to 2 lanes. `kurokesu-imx477` overlay has separate name so kernel updates, which restore stock overlays, never overwrite it.
+```
+/lib/modules/<kernel>/updates/dkms/imx477.ko.xz
+```
+
+In-kernel driver loads from `kernel/drivers/media/i2c/` instead. Removing this driver brings in-kernel one back.
+
+Stock `dtoverlay=imx477` works with this driver as well, limited to 2 lanes. Use `kurokesu-imx477` overlay for `4lane` option.
 
 ## dtoverlay options
 
