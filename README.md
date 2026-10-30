@@ -378,6 +378,10 @@ dmesg | grep imx477
 
 `failed to read chip id 477` means sensor does not answer on I2C. Check camera port and cable seating, with Pi powered off.
 
+### Why is my IMX477 image pink or magenta?
+
+Magenta cast over whole frame comes from color tuning made for a different IR filter. Stock `imx477.json` targets HQ Camera, so modules with an IR-cut filter passing more red turn magenta. Kurokesu `libcamera` fork from [Install](#install) ships `imx477.json` calibrated for Kurokesu IMX477 modules.
+
 ## Special thanks
 
 - [Raspberry Pi](https://www.raspberrypi.com/) for original [imx477 driver](https://github.com/raspberrypi/linux/blob/rpi-6.18.y/drivers/media/i2c/imx477.c)
