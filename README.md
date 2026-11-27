@@ -382,6 +382,6 @@ dmesg | grep imx477
 
 Magenta cast over whole frame comes from color tuning made for a different IR filter. Stock `imx477.json` targets HQ Camera, so modules with an IR-cut filter passing more red turn magenta. Kurokesu `libcamera` fork from [Install](#install) ships `imx477.json` calibrated for Kurokesu IMX477 modules.
 
-## Special thanks
+## Credits
 
-- [Raspberry Pi](https://www.raspberrypi.com/) for original [imx477 driver](https://github.com/raspberrypi/linux/blob/rpi-6.18.y/drivers/media/i2c/imx477.c)
+- [Naushir Patuck](https://github.com/naushir) (Raspberry Pi) for original [imx477 driver](https://github.com/raspberrypi/linux/blob/rpi-6.18.y/drivers/media/i2c/imx477.c) and [libcamera helper](https://github.com/raspberrypi/libcamera/blob/main/src/ipa/rpi/cam_helper/cam_helper_imx477.cpp)
