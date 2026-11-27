@@ -67,16 +67,16 @@ Make two changes:
 
 1. Find `camera_auto_detect` near the top and set it to `0`:
 
-```ini
-camera_auto_detect=0
-```
+   ```ini
+   camera_auto_detect=0
+   ```
 
 2. Add `dtoverlay=kurokesu-imx477` under the `[all]` section at the bottom of the file:
 
-```ini
-[all]
-dtoverlay=kurokesu-imx477
-```
+   ```ini
+   [all]
+   dtoverlay=kurokesu-imx477
+   ```
 
 *If camera is connected to cam0 port, use `dtoverlay=kurokesu-imx477,cam0` instead. See [cam0](#cam0).*
 
@@ -96,7 +96,7 @@ rpicam-hello --list-cameras
 
 Expected output (varies by link frequency and lane configuration):
 
-```
+```text
 Available cameras
 -----------------
 0 : imx477 [4056x3040 12-bit RGGB] (/base/axi/pcie@1000120000/rp1/i2c@70000/imx477@1a)
@@ -141,7 +141,7 @@ modinfo -n imx477
 
 Expected output:
 
-```
+```text
 /lib/modules/<kernel>/updates/dkms/imx477.ko.xz
 ```
 
@@ -154,7 +154,7 @@ Stock `dtoverlay=imx477` works with this driver as well, limited to 2 lanes. Use
 `kurokesu-imx477` overlay supports comma-separated options to override defaults:
 
 | option | description | default |
-|--------|-------------|---------|
+| --- | --- | --- |
 | [`cam0`](#cam0) | Use cam0 port instead of cam1 | cam1 |
 | [`4lane`](#4lane) | Use 4-lane MIPI CSI-2 (if wired) | 2 lanes |
 | [`link-frequency=<Hz>`](#link-frequency) | Set MIPI CSI-2 link frequency (Hz) | 450000000 |
@@ -189,7 +189,7 @@ dtoverlay=kurokesu-imx477,4lane
 Default link frequency is 450 MHz (900 Mbps/lane). Driver supports higher link frequencies for higher frame rates:
 
 | Range | Step |
-|---|---|
+| --- | --- |
 | 150 to 262.5 MHz | 1.5 MHz |
 | 300 to 525 MHz | 3 MHz |
 | 600 to 1050 MHz | 6 MHz |
@@ -205,7 +205,7 @@ Highest usable link frequency on Pi 5 is 750 MHz (1500 Mbps/lane), limited by it
 #### Output formats
 
 | Link frequency | Lanes | 8-bit | 10-bit | 12-bit |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | **4056×3040 (full resolution)** | | | | |
 | 450 MHz | 2 | 17 fps | 14 fps | 11 fps |
 | 750 MHz | 2 | 28 fps | 22 fps | 19 fps |
@@ -341,7 +341,7 @@ No. HQ Camera board wires out 2 lanes. It works with this driver at 2 lanes, whe
 
 In-kernel `imx477` driver rejects 4-lane configuration at probe:
 
-```
+```text
 imx477 10-001a: only 2 data lanes are currently supported
 imx477 10-001a: probe with driver imx477 failed with error -22
 ```
